@@ -7,7 +7,8 @@ small script/tool I use to produce a daily standup update based on a list of tas
 ```sh
 #!/bin/sh
 
-NOTION_TOKEN=${NOTION_TOKEN_VAL} NOTION_TASK_DB_ID=${DB_ID_VAL} go run ${PATH_TO_THIS_REPO}/main.go
+cd ${PATH_TO_CLONED_REPO}
+NOTION_TOKEN=${NOTION_TOKEN_VAL} NOTION_TASK_DB_ID=${DB_ID_VAL} go run main.go
 ```
 
 > DB ID can be found in notion page's **URI** (note this is not the `v` query parameter).
