@@ -16,6 +16,7 @@ const (
 	taskDBID           = "NOTION_TASK_DB_ID"
 	propertyNameDate   = "Date"
 	propertyNameStatus = "Status"
+	propertyNameWork   = "Work"
 	propertyNameTitle  = "Name"
 	statusDone         = "done"
 	templateFileName   = "slack-status.md.tmpl"
@@ -45,19 +46,23 @@ func main() {
 	templateFile := templateFileName
 	tmpl, err := template.ParseFiles(templateFile)
 	if err != nil {
-		panic(fmt.Sprintf("Error reading template file: %s", err))
+		panic(fmt.Sprintf("Error reading template file:", err))
 	}
 
 	// Render the template with the data
 	err = tmpl.Execute(os.Stdout, &r)
 	if err != nil {
-		panic(fmt.Sprintf("Error rendering template: %s", err))
+		panic(fmt.Sprintf("Error rendering template:", err))
 	}
 }
 
 func getYesterdaysTasks(ctx context.Context, client *notionapi.Client, now time.Time) []Task {
 	// make now yesterday
 	now = now.Add(-24 * time.Hour)
+	// if sunday, bring in completed tasks from Friday
+	if now.Weekday() == time.Sunday {
+		now = now.Add(-48 * time.Hour)
+	}
 	todayStart := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
 	todayEnd := time.Date(now.Year(), now.Month(), now.Day(), 23, 59, 59, 999999999, time.UTC)
 	nTodayStart := notionapi.Date(todayStart)
@@ -81,6 +86,12 @@ func getYesterdaysTasks(ctx context.Context, client *notionapi.Client, now time.
 				Property: propertyNameStatus,
 				Select: &notionapi.SelectFilterCondition{
 					Equals: statusDone,
+				},
+			},
+			notionapi.PropertyFilter{
+				Property: propertyNameWork,
+				Checkbox: &notionapi.CheckboxFilterCondition{
+					Equals: true,
 				},
 			},
 		},
@@ -115,6 +126,12 @@ func getTodaysTasks(ctx context.Context, client *notionapi.Client, now time.Time
 				Property: propertyNameDate,
 				Date: &notionapi.DateFilterCondition{
 					Before: &nTodayEnd,
+				},
+			},
+			notionapi.PropertyFilter{
+				Property: propertyNameWork,
+				Checkbox: &notionapi.CheckboxFilterCondition{
+					Equals: true,
 				},
 			},
 		},
